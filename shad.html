@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shadow DOM - User Card Example</title>
+  <style>
+    /* Light DOM styles (do not affect Shadow DOM internals) */
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 20px; background: #f8fafc; }
+    h2 { margin: 0 0 10px; color: #0f172a; }
+    p { color: #334155; }
+    .note { font-size: 12px; color: #475569; margin-bottom: 16px; }
+
+    /* Demonstrate theming via CSS custom props on the host */
+    user-card.theme-blue { --accent-color: #2563eb; --button-text: #ffffff; }
+    user-card.theme-rose { --accent-color: #e11d48; --button-text: #ffffff; }
+
+    /* Demonstrate opt-in styling of internals via ::part */
+    user-card::part(button) { border-radius: 9999px; padding-inline: 14px; }
+  </style>
+  </head>
+  <body>
+    <h2>Shadow DOM — Perfected Example</h2>
+    <p class="note">This page defines a reusable <code>user-card</code> Web Component using Shadow DOM with: named slots, attributes, internal events, theming via CSS variables, and <code>::part</code> for safe external styling.</p>
+
+    <!-- Instance with attributes only (uses default slot content) -->
+    <x-tooltip text="Pioneer of computing" placement="top">
+      <user-card id="cardA" class="theme-blue" name="Ada Lovelace" status="Mathematician"></user-card>
+    </x-tooltip>
+
+    <!-- Instance with named slots providing custom content -->
+    <x-tooltip text="Father of theoretical CS" placement="right">
+      <user-card id="cardB" class="theme-rose" name="Alan Turing" status="Computer Scientist">
+        <img slot="avatar" src="https://avatars.githubusercontent.com/u/583231?v=4" alt="avatar" width="64" height="64" />
+        <div slot="details">Invented the Turing machine; pivotal in codebreaking during WWII.</div>
+      </user-card>
+    </x-tooltip>
+
+    <p id="log" class="note"></p>
+
+    <script>
+      class XTooltip extends HTMLElement {
+        constructor() {
+          super();
+          this.attachShadow({ mode: 'open' });
+          const template = document.createElement('template');
+          template.innerHTML = `
+            <style>
+              :host { position: relative; display: inline-block; }
+              .bubble {
+                position: fixed; /* follow cursor in viewport */
+                z-index: 9999;
+                background: #0f172a;
+                color: #fff;
+                font-size: 12px;
+                line-height: 1;
+                padding: 8px 10px;
+                border-radius: 6px;
+                box-shadow: 0 6px 18px rgba(2,6,23,.18);
+                opacity: 0;
+                pointer-events: none;
+                transform: translate(-50%, calc(-100% - 10px));
+                transition: opacity 120ms ease;
+                white-space: nowrap;
+              }
+              .bubble[data-show="true"] { opacity: 1; }
+            </style>
+            <slot></slot>
+            <div id="bubble" class="bubble" role="tooltip" part="bubble"></div>
+          `;
+          this.shadowRoot.append(template.content.cloneNode(true));
+          this._bubble = this.shadowRoot.getElementById('bubble');
+          this._onEnter = this._onEnter.bind(this);
+          this._onLeave = this._onLeave.bind(this);
+          this._onMove = this._onMove.bind(this);
+          this._onFocus = this._onFocus.bind(this);
+          this._onBlur = this._onBlur.bind(this);
+        }
+        static get observedAttributes() { return ['text']; }
+        connectedCallback() {
+          this._syncText();
+          this.addEventListener('mouseenter', this._onEnter);
+          this.addEventListener('mouseleave', this._onLeave);
+          this.addEventListener('mousemove', this._onMove);
+          this.addEventListener('focusin', this._onFocus);
+          this.addEventListener('focusout', this._onBlur);
+        }
+        disconnectedCallback() {
+          this.removeEventListener('mouseenter', this._onEnter);
+          this.removeEventListener('mouseleave', this._onLeave);
+          this.removeEventListener('mousemove', this._onMove);
+          this.removeEventListener('focusin', this._onFocus);
+          this.removeEventListener('focusout', this._onBlur);
+        }
+        attributeChangedCallback() { this._syncText(); }
+        _syncText() { this._bubble.textContent = this.getAttribute('text') || ''; }
+        _onEnter() { this._bubble.setAttribute('data-show', 'true'); }
+        _onLeave() { this._bubble.removeAttribute('data-show'); }
+        _onFocus() { this._bubble.setAttribute('data-show', 'true'); }
+        _onBlur() { this._bubble.removeAttribute('data-show'); }
+        _onMove(e) {
+          const placement = (this.getAttribute('placement') || 'top').toLowerCase();
+          const offset = 12;
+          let x = e.clientX;
+          let y = e.clientY;
+          if (placement === 'right') {
+            this._bubble.style.transform = 'translate(12px, -50%)';
+            y = e.clientY;
+            x = e.clientX + offset;
+          } else if (placement === 'left') {
+            this._bubble.style.transform = 'translate(calc(-100% - 12px), -50%)';
+            y = e.clientY;
+            x = e.clientX - offset;
+          } else if (placement === 'bottom') {
+            this._bubble.style.transform = 'translate(-50%, 12px)';
+            x = e.clientX;
+            y = e.clientY + offset;
+          } else {
+            this._bubble.style.transform = 'translate(-50%, calc(-100% - 10px))';
+            x = e.clientX;
+            y = e.clientY - offset;
+          }
+          this._bubble.style.left = x + 'px';
+          this._bubble.style.top = y + 'px';
+        }
+      }
+      customElements.define('x-tooltip', XTooltip);
+
+      class UserCard extends HTMLElement {
+        constructor() {
+          super();
+          this.attachShadow({ mode: 'open' });
+
+          const template = document.createElement('template');
+          template.innerHTML = `
+            <style>
+              :host {
+                --accent-color: #0ea5e9;
+                --button-text: #ffffff;
+                display: inline-block;
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                box-shadow: 0 4px 10px rgba(2, 6, 23, 0.06);
+                padding: 14px 16px;
+                margin: 10px 10px 18px 0;
+                min-width: 260px;
+              }
+              .row { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; }
+              .avatar { width: 64px; height: 64px; border-radius: 9999px; overflow: hidden; background: #f1f5f9; display: grid; place-items: center; border: 1px solid #e5e7eb; }
+              .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+              .name { font-weight: 700; color: #0f172a; }
+              .status { color: #475569; font-size: 14px; margin-top: 2px; }
+              .details { color: #334155; font-size: 14px; margin-top: 8px; }
+              .actions { margin-top: 10px; }
+              button { background: var(--accent-color); color: var(--button-text); border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+              button:hover { filter: brightness(0.95); }
+            </style>
+            <div class="row">
+              <div class="avatar">
+                <slot name="avatar">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="#94a3b8" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z"/>
+                    <path d="M12 14c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z"/>
+                  </svg>
+                </slot>
+              </div>
+              <div>
+                <div class="name"></div>
+                <div class="status"></div>
+              </div>
+            </div>
+            <div class="details"><slot name="details">No extra details provided.</slot></div>
+            <div class="actions">
+              <button id="follow" part="button" type="button">Follow</button>
+            </div>
+          `;
+
+          this.shadowRoot.append(template.content.cloneNode(true));
+          this._els = {
+            name: this.shadowRoot.querySelector('.name'),
+            status: this.shadowRoot.querySelector('.status'),
+            followBtn: this.shadowRoot.getElementById('follow')
+          };
+        }
+
+        static get observedAttributes() { return ['name', 'status']; }
+
+        connectedCallback() {
+          this._render();
+          this._onFollow = () => {
+            this.dispatchEvent(new CustomEvent('follow', {
+              detail: { name: this.getAttribute('name') },
+              bubbles: true
+            }));
+          };
+          this._els.followBtn.addEventListener('click', this._onFollow);
+        }
+
+        disconnectedCallback() {
+          this._els.followBtn.removeEventListener('click', this._onFollow);
+        }
+
+        attributeChangedCallback() { this._render(); }
+
+        _render() {
+          this._els.name.textContent = this.getAttribute('name') || 'Unknown User';
+          this._els.status.textContent = this.getAttribute('status') || '—';
+        }
+      }
+
+      customElements.define('user-card', UserCard);
+
+      // Listen for custom events from the component
+      const log = document.getElementById('log');
+      document.addEventListener('follow', (e) => {
+        const when = new Date().toLocaleTimeString();
+        log.textContent = `Follow clicked for: ${e.detail.name} @ ${when}`;
+      });
+    </script>
+  </body>
+  </html>
+

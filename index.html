@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script defer src="./ex2.js"></script>
+    <script defer src="./shadowdom.js"></script>
+  </head>
+  <body>
+    <div id="form" style="position:fixed;top:50%;left:50%;background-color:rgb(213, 233, 181);width:500px;transform:translate(-50%,-50%);height:200px;display: flex;flex-direction:column;justify-content:center;padding: 1rem 3rem;align-items: center;">
+      <div style="margin-bottom: 1rem;width: fit-content;">
+        <input type="text" name="" id="weight_input" style="padding: 0.5rem 1rem;border-radius:5px;outline:none;border:none"/>
+        <button id="check_weight" style="padding: 0.5rem 1rem;border-radius:5px;outline:none;border:none">Check luggage</button>
+      </div>
+      <div style="width: fit-content;">
+        <input type="text" name="" id="removed_input" style="padding: 0.5rem 1rem;border-radius:5px;outline:none;border:none"/>
+        <button id="removed_weight" style="padding: 0.5rem 1rem;border-radius:5px;outline:none;border:none;display:none;">
+          Remove Luggage
+        </button>
+      </div>
+      <h3 style="display: none; color: green" id="success-btn">Success</h3>
+    </div>
+        <button onclick="alert('Hello')">Test Button</button>
+        <br>
+        <br>
+        <shadow-card title="Encapsulated Styles Example">
+          This text is slotted and styled inside the Shadow DOM.
+        </shadow-card>
+        <br>
+        <br>
+        <label for="a">A</label>
+        <input type="text" name="" id="a" required>
+        <br>
+        <br>
+        <label for="b">B</label>
+        <input type="text" name="" id="b" required>
+        <br>
+        <br>
+        <label for="c">C</label>
+        <input type="text" name="" id="c" required>
+        <br/>
+        <br/>
+        <button id="eulerCustom">Calculate Sum</button>
+    </div>
+    <script src="./script.js"></script>
+  </body>
+</html>
